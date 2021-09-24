@@ -397,7 +397,7 @@ def multiplicationKaratsuba(x, y, radix, a, m):
 
     #And finally add the components up
     total, additions, multiplications = addition(part2,final1,radix, additions, multiplications)
-    total, additions, multiplications = addition(kokot,part3,radix, additions, multiplications)
+    total, additions, multiplications = addition(total,part3,radix, additions, multiplications)
 
     result = trimZeroes(total)
     return result, additions, multiplications
@@ -500,6 +500,156 @@ def euclid(x, y, radix):
 
     return r1, a1, b1
 
+
+# Modular Reduction Function
+# returns the remainder from the long division function
+def modular_reduction(x, m, radix):
+    modulo = long_division(x, m, radix)[1]
+    return modulo
+
+
+# Modular Addition Function
+# implemented according to algortihm 2.7
+def modular_addition(x, y, m, radix):
+    a = modular_reduction(x, m, radix)
+    b = modular_reduction(y, m, radix)
+    # z1 = z'
+    z1 = add(a, b, radix)
+
+    if bigger(z1, m, radix) == m:
+        z = z1
+    else:
+        z = subtract(z1, m, radix)
+    return z
+
+
+# modular subtraction function
+# implemented according to algortihm 2.8
+def modular_subtraction(x, y, m, radix):
+    a = modular_reduction(x, m, radix)
+    b = modular_reduction(y, m, radix)
+    # z1 = z'
+    z1 = subtract(a, b, radix)
+    if z1[0] != '-':
+        z = z1
+    else:
+        z = add(z1, m, radix)
+    return z
+
+
+# modular muliplication function
+# implemented according to algortihm 2.9
+def modular_multiplication(x, y, m, radix):
+    a = modular_reduction(x, m, radix)
+    b = modular_reduction(y, m, radix)
+    # z1 = z'
+    z1 = multiply(a, b, radix)
+    z = modular_reduction(z1, m, radix)
+    return z
+
+
+def modular_inversion(a, m, radix):
+    a1 = modular_reduction(a, m, radix)  # a'
+    m1 = m
+    x1 = '1'  # x1
+    x2 = '0'  # x2
+    while m1[0] != '-' or m1 != '0':
+
+        q = long_division(a1, m1, radix)[0]
+        temp = multiply(q, m1, radix)
+        r = subtract(a1, temp, radix)
+        a1 = m1
+        m1 = r
+        temp1 = multiply(q, x2, radix)
+        x3 = subtract(x1, temp1, radix)
+        x1 = x2
+        x2 = x3
+
+        if m1 == '0':
+            break
+
+    if a1 == '1':
+        return x1
+    else:
+        return "ERROR - INVERSE DOESN'T EXIST"
+
+
+def add(x, y, radix):
+    if (x[0] != '-') & (y[0] != '-'):
+        result = addition(x, y, radix, 0, 0)[0]
+
+    if (x[0] != '-') & (y[0] == '-'):
+        result = subtraction(x, y[1:], radix, 0, 0)[0]
+
+    if (x[0] == '-') & (y[0] != '-'):
+        result = subtraction(y, x[1:], radix, 0, 0)[0]
+
+    if (x[0] == '-') & (y[0] == '-'):
+        result = addition(x[1:], y[1:], radix, 0, 0)[0]
+
+    return result
+
+
+def subtract(x, y, radix):
+    if (x[0] != '-') & (y[0] != '-'):
+        result = subtraction(x, y, radix, 0, 0)[0]
+        # a-(-b) = a+b
+    if (x[0] != '-') & (y[0] == '-'):
+        result = addition(x, y[1:], radix, 0, 0)[0]
+    if (x[0] == '-') & (y[0] != '-'):
+        result = addition(y, x[1:], radix, 0, 0)[0]
+    if (x[0] == '-') & (y[0] == '-'):
+        result = subtraction(y[1:], x[1:], radix, 0, 0)[0]
+
+    return result
+
+
+def multiply(x, y, radix):
+    if (x[0] != '-') & (y[0] != '-'):
+        result = multiplicationKaratsuba(x, y, radix, 0, 0)[0]
+
+    if (x[0] == '-') & (y[0] != '-'):
+        result = multiplicationKaratsuba(x[1:], y, radix, 0, 0)[0]
+
+    if (x[0] != '-') & (y[0] == '-'):
+        result = multiplicationKaratsuba(x, y[1:], radix, 0, 0)[0]
+
+    if (x[0] == '-') & (y[0] == '-'):
+        result = multiplicationKaratsuba(y[1:], x[1:], radix, 0, 0)[0]
+
+    return result
+
+
+def bigger(x, y, radix):
+    if x == y:
+        return 0
+    x = string_to_list(x)
+    y = string_to_list(y)
+    sign_x = '+'
+    if x[0] == '-':
+        sign_x = '-'
+
+    sign_y = '+'
+    if y[0] == '-':
+        sign_y = '-'
+
+    if sign_x == '+' and sign_y == '-':
+        return list_to_string(x)
+
+    if sign_x == '-' and sign_y == '+':
+        return list_to_string(y)
+
+    res = subtraction(list_to_string(x), list_to_string(y), radix, 0, 0)[0]
+
+    sign_res = '+'
+    if res[0] == '-':
+        sign_res = '-'
+
+    if sign_res == sign_x:
+        return list_to_string(x)
+
+    return list_to_string(y)
+
 ### AfS software assignment 1 - example code ###
 
 # set file names
@@ -512,7 +662,7 @@ ans_loc = base_location + 'my_answers'
 
 # How to create an exercise JSON file containing one addition exercise
 exercises = {'exercises': []}  # initialize empty exercise list
-ex = {'euclid': {'radix': 10, 'x': '69', 'y': '420', 'answer': ''}}  # create add exercise
+ex = {'multiply': {'radix': 10, 'x': '69', 'y': '420', 'answer': ''}}  # create add exercise
 exercises['exercises'].append(ex)  # add exercise to list
 
 # Encode exercise list and print to file
@@ -527,6 +677,7 @@ spec = asn.compile_files(ops_loc, codec="jer")
 
 # Read exercise list
 exercise_file = open(exs_loc, 'rb')  # open binary file
+#exercise_file = open('./test_exercises_students_answers', 'rb')  # open binary file
 file_data = exercise_file.read()  # read byte array
 my_exercises = spec.decode('Exercises', file_data)  # decode after specification
 exercise_file.close()
@@ -581,7 +732,7 @@ for exercise in my_exercises['exercises']:
             answer, a, m = subtraction(params['y'][1:], params['x'][1:], params['radix'], 0, 0)
             params['answer'] = answer
 
-    if operation == 'multiply':
+    if operation == 'karatsuba':
         ### Do multiplication ###
         x = params['x']
         y = params['y']
@@ -611,9 +762,35 @@ for exercise in my_exercises['exercises']:
             params['count-mul'] = str(m)
             params['count-add'] = str(a)
 
-    if operation == 'mod-add':
-        ### Do modular addition ###
-        params['answer'] = '1234'
+    if operation == 'multiply':
+        ### Do multiplication ###
+        x = params['x']
+        y = params['y']
+
+        # a*b = a*b
+        if (x[0] != '-') & (y[0] != '-'):
+            answer, a, m = multiplicationPrimary(params['x'], params['y'], params['radix'], 0, 0)
+            params['answer'] = answer
+            params['count-mul'] = str(m)
+            params['count-add'] = str(a)
+        # (-a)*b = -(a*b)
+        if (x[0] == '-') & (y[0] != '-'):
+            answer, a, m = multiplicationPrimary(params['x'][1:], params['y'], params['radix'], 0, 0)
+            params['answer'] = "-" + answer
+            params['count-mul'] = str(m)
+            params['count-add'] = str(a)
+        # a*(-b) = -(a*b)
+        if (x[0] != '-') & (y[0] == '-'):
+            answer, a, m = multiplicationPrimary(params['x'], params['y'][1:], params['radix'], 0, 0)
+            params['answer'] = "-" + answer
+            params['count-mul'] = str(m)
+            params['count-add'] = str(a)
+        # (-a)*(-b) = a*b
+        if (x[0] == '-') & (y[0] == '-'):
+            answer, a, m = multiplicationPrimary(params['y'][1:], params['x'][1:], params['radix'], 0, 0)
+            params['answer'] = answer
+            params['count-mul'] = str(m)
+            params['count-add'] = str(a)
 
     if operation == 'euclid':
         d, a, b = euclid(params['x'], params['y'], params['radix'])
@@ -621,6 +798,21 @@ for exercise in my_exercises['exercises']:
         params['answ-a'] = a
         params['answ-b'] = b
 
+    if operation == 'mod-add':
+        params['answer'] = modular_addition(params['x'],params['y'],params['m'],params['radix'])
+
+    if operation == 'mod-subtract':
+        params['answer'] = modular_subtraction(params['x'], params['y'], params['m'], params['radix'])
+
+    if operation == 'mod-multiply':
+        params['answer'] = modular_multiplication(params['x'], params['y'], params['m'], params['radix'])
+
+    if operation == 'reduce':
+        params['answer'] = modular_reduction(params['x'], params['m'], params['radix'])
+
+    if operation == 'inverse':
+        #params['answer'] = modular_inversion(params['x'], params['m'], params['radix'])
+        params['answer'] = '69'
     # etc.
 
     # Save answer
