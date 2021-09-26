@@ -47,7 +47,7 @@ def list_to_string(num_list):
 
 
 # Long Division function (Algorithm 1.5)
-#
+# implemented according to  [Sh, Section 3.3.4]
 def long_division(x, y, radix):
     radix = int(radix)
     # check the sign of the numbers
@@ -69,7 +69,7 @@ def long_division(x, y, radix):
 
     # if y>x then output 0 as quotient and x as the remainder
     if k < l:
-        return [0, x]
+        return ['0', list_to_string(x)]
 
     # quotient and remainder
     q = []
@@ -523,7 +523,7 @@ def modular_addition(x, y, m, radix):
     return z
 
 
-# modular subtraction function
+# Modular subtraction function
 # implemented according to algortihm 2.8
 def modular_subtraction(x, y, m, radix):
     a = modular_reduction(x, m, radix)
@@ -547,31 +547,18 @@ def modular_multiplication(x, y, m, radix):
     z = modular_reduction(z1, m, radix)
     return z
 
+# Modular Inversion Function
+# works based on the extended euclidean algorithm
+def modular_inversion(x, m, radix):
+    gcd = euclid(x, m , radix)[0]
+    if gcd != '1':
+        return "ERROR - inverse does not exist"
 
-def modular_inversion(a, m, radix):
-    a1 = modular_reduction(a, m, radix)  # a'
-    m1 = m
-    x1 = '1'  # x1
-    x2 = '0'  # x2
-    while m1[0] != '-' or m1 != '0':
-
-        q = long_division(a1, m1, radix)[0]
-        temp = multiply(q, m1, radix)
-        r = subtract(a1, temp, radix)
-        a1 = m1
-        m1 = r
-        temp1 = multiply(q, x2, radix)
-        x3 = subtract(x1, temp1, radix)
-        x1 = x2
-        x2 = x3
-
-        if m1 == '0':
-            break
-
-    if a1 == '1':
-        return x1
-    else:
-        return "ERROR - INVERSE DOESN'T EXIST"
+    x_mod = euclid(x, m, radix)[2]
+    while x_mod[0] == '-':
+        x_mod = add(x_mod, m, radix)
+        
+    return x_mod
 
 
 def add(x, y, radix):
@@ -623,8 +610,7 @@ def multiply(x, y, radix):
 def bigger(x, y, radix):
     if x == y:
         return 0
-    x = string_to_list(x)
-    y = string_to_list(y)
+   
     sign_x = '+'
     if x[0] == '-':
         sign_x = '-'
@@ -632,6 +618,9 @@ def bigger(x, y, radix):
     sign_y = '+'
     if y[0] == '-':
         sign_y = '-'
+
+    x = string_to_list(x)
+    y = string_to_list(y)
 
     if sign_x == '+' and sign_y == '-':
         return list_to_string(x)
@@ -660,15 +649,15 @@ ans_loc = base_location + 'my_answers'
 
 ###### Creating an exercise list file ######
 
-# How to create an exercise JSON file containing one addition exercise
-exercises = {'exercises': []}  # initialize empty exercise list
-ex = {'multiply': {'radix': 10, 'x': '69', 'y': '420', 'answer': ''}}  # create add exercise
-exercises['exercises'].append(ex)  # add exercise to list
+# # How to create an exercise JSON file containing one addition exercise
+# exercises = {'exercises': []}  # initialize empty exercise list
+# ex = {'multiply': {'radix': 10, 'x': '69', 'y': '420', 'answer': ''}}  # create add exercise
+# exercises['exercises'].append(ex)  # add exercise to list
 
-# Encode exercise list and print to file
-my_file = open(exs_loc, 'wb+')  # write to binary file
-my_file.write(json.dumps(exercises).encode())  # add encoded exercise list
-my_file.close()
+# # Encode exercise list and print to file
+# my_file = open(exs_loc, 'wb+')  # write to binary file
+# my_file.write(json.dumps(exercises).encode())  # add encoded exercise list
+# my_file.close()
 
 ###### Using an exercise list file ######
 
@@ -811,8 +800,8 @@ for exercise in my_exercises['exercises']:
         params['answer'] = modular_reduction(params['x'], params['m'], params['radix'])
 
     if operation == 'inverse':
-        #params['answer'] = modular_inversion(params['x'], params['m'], params['radix'])
-        params['answer'] = '69'
+        params['answer'] = modular_inversion(params['x'], params['m'], params['radix'])
+        
     # etc.
 
     # Save answer
